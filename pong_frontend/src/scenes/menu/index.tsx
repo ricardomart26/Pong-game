@@ -17,7 +17,7 @@ const GameMenu = () => {
         {
             opt: "1 vs 1 (Offline)",
             action: () => {navigate('/game/1vs1off')},
-            backgroundColor: "grey",
+            backgroundColor: "yellow",
         },
         {
             opt :"1 vs pc",
