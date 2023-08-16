@@ -1,7 +1,6 @@
-import { exit } from "process";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 /**
  * TODO:
@@ -25,7 +24,7 @@ const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 600;
 const SPEED = 2.2;
 
-const Canvas = () => {
+const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
     
     const params = useParams();
     console.log(params);
@@ -37,7 +36,7 @@ const Canvas = () => {
     let ball_direction_y: number = 1;
     // let curve: number = 0;
     let curve: number = 0;
-    let idle: boolean = false;
+    let idle: boolean = true;
 
 
     const players: Object[] = [{
