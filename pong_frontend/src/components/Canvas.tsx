@@ -27,13 +27,12 @@ const SPEED = 2.2;
 const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
     
     const params = useParams();
-    console.log(params);
-
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    
     let ctx: CanvasRenderingContext2D;
     const listKeys: string[] = [];
     let ball_direction_x: number = 1;
-    let ball_direction_y: number = 1;
+    let finish: boolean = false;
     // let curve: number = 0;
     let curve: number = 0;
     let idle: boolean = true;
@@ -77,9 +76,18 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
         players[1].x = CANVAS_WIDTH - 40;
         players[1].y = CANVAS_WIDTH / 2;
         curve = 0;
-        idle = true;
+        idle = false;
     }
 
+
+    const write_score = () => {
+        ctx.fillStyle = 'green';
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.font = "30px Courier New";
+        ctx.fillStyle = "red";
+        ctx.fillText((players[0].score?.toString() || "0"), 30, 50);
+        ctx.fillText((players[1].score?.toString() || "0"), CANVAS_WIDTH - 40, 50);
+    }
 
     const check_score = () => {
         if (players[2].x > CANVAS_WIDTH)
@@ -90,7 +98,7 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
             // console.log("Score: " + players[0].score);
             reset_canvas();
             if (players[0].score === 11)
-                idle = true;
+                finish = true;
         }
         else if (players[2].x < 0)
         {
@@ -98,7 +106,7 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
                 players[1].score++;
             reset_canvas();
             if (players[1].score === 11)
-                idle = true;
+                finish = true;
 
         }
     };
@@ -199,14 +207,8 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
         if (params["option"] === '1vspc')
             ai(1);
 
+        write_score();
 
-
-        ctx.fillStyle = 'green';
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.font = "30px Courier New";
-        ctx.fillStyle = "red";
-        ctx.fillText((players[0].score?.toString() || "0"), 30, 50);
-        ctx.fillText((players[1].score?.toString() || "0"), CANVAS_WIDTH - 40, 50);
         players.forEach(player => {
             ctx.fillStyle = player.color;
             if (player.y <= (player.height / 2))
@@ -241,6 +243,7 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
     const init = () => {
         ctx = canvasRef.current?.getContext("2d") as CanvasRenderingContext2D;
         window.addEventListener('keydown', (e: KeyboardEvent) => {
+            listKeys.splice(listKeys.indexOf(e.key), 1);
             if (!listKeys.includes(e.key))
                 listKeys.push(e.key);
         });
