@@ -1,42 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-
+// import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import { Object } from "../interfaces/Object";
 /**
  * TODO:
  * 
  * - Perceber o porque de encravar as pazinhas
  * - Parte de baixo da pazinha não muda a direção da bola
  * - Como fazer para quando clicar espaço, só pressionar uma vez
+ * - Ver como o fazer o resize com o canvas https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas
  */
-interface Object {
-    x: number;
-    y: number;
-    color: string;
-    height: number;
-    name: string;
-    width: number;
-    score?: number;
-    speed: number;
-};
+
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 600;
-const SPEED = 2.2;
+// const SPEED = 2.2;
 
-const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
+const Canvas = ({changeKeys, scoreToWin}: {changeKeys: (activate: boolean) => void, scoreToWin: number}) => {
     
     const params = useParams();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     
+    let winner: Object;
+    
+
     let ctx: CanvasRenderingContext2D;
     const listKeys: string[] = [];
     let ball_direction_x: number = 1;
     let finish: boolean = false;
-    // let curve: number = 0;
     let curve: number = 0;
-    let idle: boolean = true;
-
+    let idle: boolean = false;
 
     const players: Object[] = [{
         x: 30,
@@ -89,6 +82,26 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
         ctx.fillText((players[1].score?.toString() || "0"), CANVAS_WIDTH - 40, 50);
     }
 
+    const draw_players = () => {
+        players.forEach(player => {
+            ctx.fillStyle = player.color;
+            if (player.y <= (player.height / 2))
+                player.y = (player.height / 2);
+            else if (player.y >= CANVAS_HEIGHT - (player.height / 2))
+                player.y = CANVAS_HEIGHT - (player.height / 2);
+            if (player.name === "ball")
+            {
+                ctx.beginPath();
+                ctx.fillStyle = player.color;
+                ctx.arc(player.x, player.y, player.height, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.closePath();
+            }
+            else
+                ctx.fillRect(player.x, player.y - player.height / 2, player.width, player.height);
+        });
+    }
+
     const check_score = () => {
         if (players[2].x > CANVAS_WIDTH)
         {
@@ -97,16 +110,22 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
                 players[0].score++;
             // console.log("Score: " + players[0].score);
             reset_canvas();
-            if (players[0].score === 11)
+            if (players[0].score === scoreToWin)
+            {
+                winner = players[0];
                 finish = true;
+            }
         }
         else if (players[2].x < 0)
         {
             if (players[1].score != undefined)
                 players[1].score++;
             reset_canvas();
-            if (players[1].score === 11)
+            if (players[1].score === scoreToWin)
+            {
+                winner = players[1];
                 finish = true;
+            }
 
         }
     };
@@ -148,12 +167,8 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
             move(-1, 0);
         else if (listKeys.includes('s'))
             move(1, 0);
-        console.log('params ', params);
-        console.log('params option', params["option"]);
         if (params["option"] === '1vs1off')
         {
-           console.log('params ', params);
-
             if (listKeys.includes('ArrowUp'))
                 move(-1, 1);
             else if (listKeys.includes('ArrowDown'))
@@ -181,7 +196,6 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
             curve = (players[2].y > players[0].y ? ((players[2].y - players[0].y) / 10): curve);
             // A bola está na metade de cima, por isso a curva tem de ser positiva
             curve = (players[2].y < players[0].y ? ((players[0].y - players[2].y) / 10) * -1 : curve);
-            console.log(curve);
             ball_direction_x = 1;
         }
         
@@ -199,33 +213,17 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
         if (listKeys.includes(' '))
             idle = !idle;
 
-        if (!idle)
+        if (!idle && !finish)
+        {
             update();
+            handle_moves();
+
+            if (params["option"] === '1vspc')
+                ai(1);
     
-        handle_moves();
-
-        if (params["option"] === '1vspc')
-            ai(1);
-
-        write_score();
-
-        players.forEach(player => {
-            ctx.fillStyle = player.color;
-            if (player.y <= (player.height / 2))
-                player.y = (player.height / 2);
-            else if (player.y >= CANVAS_HEIGHT - (player.height / 2))
-                player.y = CANVAS_HEIGHT - (player.height / 2);
-            if (player.name === "ball")
-            {
-                ctx.beginPath();
-                ctx.fillStyle = player.color;
-                ctx.arc(player.x, player.y, player.height, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.closePath();
-            }
-            else
-                ctx.fillRect(player.x, player.y - player.height / 2, player.width, player.height);
-        });
+            write_score();
+            draw_players();
+        }
 
         if (idle)
         {
@@ -234,6 +232,12 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
             ctx.fillStyle = 'red';
             ctx.font = '30px sans-serif bold';
             ctx.fillText("PAUSED GAME", CANVAS_WIDTH / 2 - 100, CANVAS_HEIGHT / 2 + 10);
+        } else if (finish) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.fillRect(CANVAS_WIDTH / 2 - 150, CANVAS_HEIGHT / 2 - 50, 300, 100);
+            ctx.fillStyle = 'red';
+            ctx.font = '30px sans-serif bold';
+            ctx.fillText("WINNER IS " + winner.name, CANVAS_WIDTH / 2 - 100, CANVAS_HEIGHT / 2 + 10);
         }
 
         requestAnimationFrame(renderObj);
@@ -243,7 +247,6 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
     const init = () => {
         ctx = canvasRef.current?.getContext("2d") as CanvasRenderingContext2D;
         window.addEventListener('keydown', (e: KeyboardEvent) => {
-            listKeys.splice(listKeys.indexOf(e.key), 1);
             if (!listKeys.includes(e.key))
                 listKeys.push(e.key);
         });
@@ -254,11 +257,15 @@ const Canvas = ({changeKeys}: {changeKeys: (activate: boolean) => void}) => {
     }
 
     useEffect(() => {
+        // console.log('Score to win', scoreToWin);
+        // if (scoreToWin > 0)
         init();
     }, []);
 
     return (
-        <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT}></canvas>
+        <div>
+            {scoreToWin && <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT}></canvas>}
+        </div>
     );
 }
 
