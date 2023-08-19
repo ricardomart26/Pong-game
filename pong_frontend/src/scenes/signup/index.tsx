@@ -7,7 +7,6 @@ import React, { useState } from "react";
 
 const SignupPage = () => {
 
-
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
 
