@@ -34,10 +34,10 @@ const LoginPage = () => {
                     <Box display="flex" justifyContent="center" alignItems="center" sx={{paddingBottom: 1, paddingTop: 2}}>
                         <Avatar style={avatarStyle}><LockOutlined/></Avatar>
                     </Box>
-                    <h2>Sign in</h2>
+                    <h2>Log in</h2>
                     <TextField label="Username" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} required placeholder="Enter username..." fullWidth sx={{paddingBottom: 2}}></TextField>
                     <TextField label="Password" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} required placeholder="Enter password..." type="password" fullWidth></TextField>
-                    <FormControlLabel
+                    <FormControlLabel 
                         control={
                             <Checkbox name="checkBox" color="primary"/>
                         }
@@ -49,14 +49,13 @@ const LoginPage = () => {
                             Forgot password?
                         </Link>
                     </Typography>
-                    <Typography> Do you have an account?      
+                    <Typography> You don't have an account?      
                         <Link to="#" style={{paddingLeft: 2}}>
                             Sign Up
                         </Link>
                     </Typography>
                 </Paper>
             </Box>
-
         </div>
     );
 
