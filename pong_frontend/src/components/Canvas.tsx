@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 // import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { Object } from "../interfaces/Object";
+import { Button } from "@mui/material";
+
 /**
  * TODO:
  * 
@@ -9,61 +11,102 @@ import { Object } from "../interfaces/Object";
  * - Parte de baixo da pazinha não muda a direção da bola
  * - Como fazer para quando clicar espaço, só pressionar uma vez
  * - Ver como o fazer o resize com o canvas https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas
+ * - Max speed da bola
+ * - Perceber porque bater nas pontas a bola vai a direito?
  */
 
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 600;
-// const SPEED = 2.2;
+const BALL_SPEED = 4;
+const INCREMENT_SPEED = 0.3;
+
+const PLAYER_SPEED = 6;
+// const BALL_SPEED = 2.2;
+// const BALL_SPEED = 2.2;
+
+
+
+const useKeysPress = (): string[] => {
+    const [pressedKeys, setPressedKeys] = useState<string[]>([]);
+
+
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (!pressedKeys.includes(e.key))
+            setPressedKeys([...pressedKeys, e.key]);
+    }
+
+    const onKeyUp = (e: KeyboardEvent) => {
+        setPressedKeys(pressedKeys.splice(pressedKeys.indexOf(e.key), 1));
+    }
+
+    useEffect(() => {
+        window.addEventListener('keydown', onKeyDown)
+        window.addEventListener('keyup', onKeyUp);
+        
+        return () => {
+            window.removeEventListener("keydown", (onKeyDown))
+            window.removeEventListener("keyup", (onKeyUp))
+        }
+    }, [pressedKeys]);
+    
+    return pressedKeys;
+} 
+
+
+const players: Object[] = [{
+    x: 30,
+    y: CANVAS_HEIGHT / 2,
+    color: 'yellow',
+    height: 100,
+    width: 15,
+    name: "player",
+    score: 0,
+    speed: PLAYER_SPEED
+},
+{
+    x: CANVAS_WIDTH - 40,
+    y: CANVAS_HEIGHT / 2,
+    color: 'red',
+    height: 100,
+    width: 15,
+    name: "player2",
+    score: 0,
+    speed: PLAYER_SPEED
+}];
+
+let ball: Object = {
+    x: CANVAS_WIDTH / 2,
+    y: CANVAS_HEIGHT / 2,
+    color: 'black',
+    height: 10,
+    width: 10,
+    name: "ball",
+    speed: BALL_SPEED
+}
+
 
 const Canvas = ({changeKeys, scoreToWin}: {changeKeys: (activate: boolean) => void, scoreToWin: number}) => {
     
     const params = useParams();
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    
+    // const [idle, setIdle] = useState(false); // Add idle state
+    // const pressedKeys: string[] = [];
+    const pressedKeys: string[] = useKeysPress();
+
     let winner: Object;
-    
 
     let ctx: CanvasRenderingContext2D;
-    const listKeys: string[] = [];
-    let ball_direction_x: number = 1;
-    let finish: boolean = false;
+    let ballDirectionX: number = 1;
+    // let finish: boolean = false;
+    const [finished, setFinished] = useState(false);
     let curve: number = 0;
     let idle: boolean = false;
 
-    const players: Object[] = [{
-        x: 30,
-        y: CANVAS_HEIGHT / 2,
-        color: 'yellow',
-        height: 100,
-        width: 15,
-        name: "player",
-        score: 0,
-        speed: 3
-    },
-    {
-        x: CANVAS_WIDTH - 40,
-        y: CANVAS_HEIGHT / 2,
-        color: 'red',
-        height: 100,
-        width: 15,
-        name: "player2",
-        score: 0,
-        speed: 3
-    },
-    {
-        x: CANVAS_WIDTH / 2,
-        y: CANVAS_HEIGHT / 2,
-        color: 'black',
-        height: 10,
-        width: 10,
-        name: "ball",
-        speed: 2.2
-    }];
-
-    const reset_canvas = () => {
-        players[2].x = CANVAS_WIDTH / 2;
-        players[2].y = CANVAS_HEIGHT / 2;
+    const resetCanvas = () => {
+        ball.x = CANVAS_WIDTH / 2;
+        ball.y = CANVAS_HEIGHT / 2;
+        ball.speed = BALL_SPEED
         players[0].x = 30;
         players[0].y = CANVAS_WIDTH / 2;
         players[1].x = CANVAS_WIDTH - 40;
@@ -73,7 +116,7 @@ const Canvas = ({changeKeys, scoreToWin}: {changeKeys: (activate: boolean) => vo
     }
 
 
-    const write_score = () => {
+    const writeScore = () => {
         ctx.fillStyle = 'green';
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.font = "30px Courier New";
@@ -82,77 +125,57 @@ const Canvas = ({changeKeys, scoreToWin}: {changeKeys: (activate: boolean) => vo
         ctx.fillText((players[1].score?.toString() || "0"), CANVAS_WIDTH - 40, 50);
     }
 
-    const draw_players = () => {
+    const drawPlayers = () => {
         players.forEach(player => {
             ctx.fillStyle = player.color;
             if (player.y <= (player.height / 2))
                 player.y = (player.height / 2);
             else if (player.y >= CANVAS_HEIGHT - (player.height / 2))
                 player.y = CANVAS_HEIGHT - (player.height / 2);
-            if (player.name === "ball")
-            {
-                ctx.beginPath();
-                ctx.fillStyle = player.color;
-                ctx.arc(player.x, player.y, player.height, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.closePath();
-            }
-            else
-                ctx.fillRect(player.x, player.y - player.height / 2, player.width, player.height);
+            ctx.fillRect(player.x, player.y - player.height / 2, player.width, player.height);
         });
+        ctx.beginPath();
+        ctx.fillStyle = ball.color;
+        ctx.arc(ball.x, ball.y, ball.height, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.closePath();
     }
 
-    const check_score = () => {
-        if (players[2].x > CANVAS_WIDTH)
+    const checkScore = (player: Object) => {
+        if (player.score != undefined)
+            player.score++;
+        resetCanvas();
+        if (player.score === scoreToWin)
         {
-
-            if (players[0].score != undefined)
-                players[0].score++;
-            // console.log("Score: " + players[0].score);
-            reset_canvas();
-            if (players[0].score === scoreToWin)
-            {
-                winner = players[0];
-                finish = true;
-            }
-        }
-        else if (players[2].x < 0)
-        {
-            if (players[1].score != undefined)
-                players[1].score++;
-            reset_canvas();
-            if (players[1].score === scoreToWin)
-            {
-                winner = players[1];
-                finish = true;
-            }
-
+            winner = player;
+            setFinished(true);
         }
     };
 
+
     const colision = (player: number): boolean => {
-        return ((players[2].x >= players[player].x - players[player].width && players[2].x <= players[player].x + players[player].width)
-            && (players[2].y >= players[player].y - (players[player].height / 2) && players[2].y <= players[player].y + (players[player].height / 2)))
+        return ((ball.x >= players[player].x - players[player].width && ball.x <= players[player].x + players[player].width + 10)
+            && (ball.y >= players[player].y - (players[player].height / 2) && ball.y <= players[player].y + (players[player].height / 2)))
     };
 
 
     const ai = (level: number) => {
         if (level === 1) {
-            if (ball_direction_x == 1)
+            if (ballDirectionX == 1)
             {
-               if (players[2].y >= players[1].y)
+               if (ball.y >= players[1].y)
                     move(1, 1);
-               else if (players[2].y <= players[1].y)
+               else if (ball.y <= players[1].y)
                     move(-1, 1);
             }
         }
         if (level === 2)
         {
-            if (ball_direction_x == 1)
+            if (ballDirectionX == 1)
             {
-               if (players[2].y >= players[1].y)
+               if (ball.y >= players[1].y)
                     move(1, 1);
-               else if (players[2].y <= players[1].y)
+               else if (ball.y <= players[1].y)
                     move(-1, 1);
             }   
         }
@@ -162,109 +185,142 @@ const Canvas = ({changeKeys, scoreToWin}: {changeKeys: (activate: boolean) => vo
         players[player].y += move * players[player].speed;
     }
 
-    const handle_moves = () => {
-        if (listKeys.includes('w'))
+    const handleMoves = () => {
+        if (pressedKeys.includes('w'))
             move(-1, 0);
-        else if (listKeys.includes('s'))
+        else if (pressedKeys.includes('s'))
             move(1, 0);
         if (params["option"] === '1vs1off')
         {
-            if (listKeys.includes('ArrowUp'))
+            if (pressedKeys.includes('ArrowUp'))
                 move(-1, 1);
-            else if (listKeys.includes('ArrowDown'))
+            else if (pressedKeys.includes('ArrowDown'))
                 move(1, 1);
         }
     };
 
-    const update = () => {
+    // const checkColision = (player: Object, playerIndex: number, ballDirectionX: number) => {
+    //     console.log('player name', player.name);
+    //     console.log('ballDirectionX', ballDirectionX);
+    //     console.log('player index:', playerIndex);
+    //     if (colision(playerIndex) && ballDirectionX == 1)
+    //     {
+    //         // A bola está na metade de baixo, por isso a curva tem de ser positiva
+    //         curve = (ball.y > players[0].y ? ((ball.y - players[0].y) / 10): curve);
+    //         // A bola está na metade de cima, por isso a curva tem de ser positiva
+    //         curve = (ball.y < players[0].y ? ((players[0].y - ball.y) / 10) * -1 : curve);
+    //         ballDirectionX = -1;
+    //         counter++;
+    //     }
+    // }
 
-        players[2].x += players[2].speed * ball_direction_x;
-        players[2].y += curve;
+    const updateGame = () => {
 
-        if (colision(1) && ball_direction_x == 1)
+        ball.x += ball.speed * ballDirectionX;
+        ball.y += curve;
+
+        // players.map((player, index) => {
+        //     checkColision(player, index ^ 1, ballDirectionX);
+
+        // })
+        if (colision(1))
         {
-            // A bola está na metade de baixo, por isso a curva tem de ser positiva
-            curve = (players[2].y > players[1].y ? ((players[2].y - players[1].y) / 10): curve);
-            // A bola está na metade de cima, por isso a curva tem de ser positiva
-            curve = (players[2].y < players[1].y ? ((players[1].y - players[2].y) / 10) * -1 : curve);
-            ball_direction_x = -1;
+            if (ball.y > players[1].y)
+                curve = ((ball.y - players[1].y) / 10)
+            else if (ball.y < players[1].y)
+                curve = ((players[1].y - ball.y) / 10) * -1
+            ballDirectionX = -1;
+            if (ball.speed < 10)
+                ball.speed += INCREMENT_SPEED;
         }
-        else if (colision(0) && ball_direction_x == -1)
+        else if (colision(0))
         {
 
             // A bola está na metade de baixo, por isso a curva tem de ser positiva
-            curve = (players[2].y > players[0].y ? ((players[2].y - players[0].y) / 10): curve);
-            // A bola está na metade de cima, por isso a curva tem de ser positiva
-            curve = (players[2].y < players[0].y ? ((players[0].y - players[2].y) / 10) * -1 : curve);
-            ball_direction_x = 1;
+            if (ball.y > players[0].y)
+                curve = ((ball.y - players[0].y) / 10);
+            else if (ball.y < players[0].y)
+                curve = ((players[0].y - ball.y) / 10) * -1;
+            // curve = (ball.y > players[0].y ? : curve);
+            // // A bola está na metade de cima, por isso a curva tem de ser positiva
+            // curve = (ball.y < players[0].y ?  * -1 : curve);
+            ballDirectionX = 1;
+            if (ball.speed < 10)
+                ball.speed += INCREMENT_SPEED;
         }
         
-        if (players[2].y >= CANVAS_HEIGHT - (players[2].height || 0))
-            curve *= -1;
-        else if (players[2].y < 0 + (players[2].height || 0))
+
+        if ((ball.y >= CANVAS_HEIGHT - (ball.height || 0)) || (ball.y < 0 + (ball.height || 0)))
             curve *= -1;
 
         // Touch the end line, should increment score;
-        check_score(); 
-    }
-
-    const renderObj = () => 
+        if (ball.x > CANVAS_WIDTH)
+            checkScore(players[0]);
+        else if (ball.x < 0)
+            checkScore(players[1]);
+    };
+    
+    const gameLoop = () => 
     {
-        if (listKeys.includes(' '))
-            idle = !idle;
-
-        if (!idle && !finish)
+        if (!idle && !finished)
         {
-            update();
-            handle_moves();
+            updateGame();
+            handleMoves();
 
             if (params["option"] === '1vspc')
                 ai(1);
-    
-            write_score();
-            draw_players();
-        }
-
-        if (idle)
+            writeScore();
+            drawPlayers();
+            requestAnimationFrame(gameLoop);
+        } 
+        else if (idle)
         {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.fillRect(CANVAS_WIDTH / 2 - 150, CANVAS_HEIGHT / 2 - 50, 300, 100);
+            ctx.fillRect(CANVAS_WIDTH / 2 - 200, CANVAS_HEIGHT / 2 - 50, 400, 100);
             ctx.fillStyle = 'red';
             ctx.font = '30px sans-serif bold';
             ctx.fillText("PAUSED GAME", CANVAS_WIDTH / 2 - 100, CANVAS_HEIGHT / 2 + 10);
-        } else if (finish) {
+        } 
+        else if (finished) 
+        {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.fillRect(CANVAS_WIDTH / 2 - 150, CANVAS_HEIGHT / 2 - 50, 300, 100);
+            ctx.fillRect(CANVAS_WIDTH / 2 - 200, CANVAS_HEIGHT / 2 - 50, 400, 100);
             ctx.fillStyle = 'red';
             ctx.font = '30px sans-serif bold';
             ctx.fillText("WINNER IS " + winner.name, CANVAS_WIDTH / 2 - 100, CANVAS_HEIGHT / 2 + 10);
         }
-
-        requestAnimationFrame(renderObj);
-
     }
 
-    const init = () => {
-        ctx = canvasRef.current?.getContext("2d") as CanvasRenderingContext2D;
-        window.addEventListener('keydown', (e: KeyboardEvent) => {
-            if (!listKeys.includes(e.key))
-                listKeys.push(e.key);
-        });
-        window.addEventListener('keyup', (e: KeyboardEvent) => {
-           listKeys.splice(listKeys.indexOf(e.key), 1);
-        });
-        renderObj();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (!pressedKeys.includes(e.key))
+            pressedKeys.push(e.key);
+        if (pressedKeys.includes(' '))
+        {
+            idle = !idle;
+            if (!idle)
+                gameLoop();
+        }
+    }
+
+    const onKeyUp = (e: KeyboardEvent) => {
+            // console.log("key released", pressedKeys);
+            pressedKeys.splice(pressedKeys.indexOf(e.key), 1);
     }
 
     useEffect(() => {
-        // console.log('Score to win', scoreToWin);
-        // if (scoreToWin > 0)
-        init();
+        ctx = canvasRef.current?.getContext("2d") as CanvasRenderingContext2D;
+        window.addEventListener('keydown', onKeyDown)
+        window.addEventListener('keyup', onKeyUp);
+        gameLoop();
     }, []);
 
     return (
         <div>
             {scoreToWin && <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT}></canvas>}
+            {/* {finished && <Button onClick={(e: React.MouseEvent) => {
+                setFinished(false);
+            }}> Play again </Button>} */}
         </div>
     );
 }
