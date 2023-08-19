@@ -6,7 +6,6 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-
 COPY ./start_script.sh .
 
 RUN chmod 777 start_script.sh
