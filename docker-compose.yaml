@@ -1,0 +1,56 @@
+version: 3.3
+
+services:
+
+  # TODO: Verficiar se o port é 3002 ou 3000 no lado do react
+  pong_frontend:
+    container_name: pong-frontend
+    build: pong_frontend/
+    ports:
+      - '3002:3002'
+    build: pong_frontend/
+    environment:
+      - NODE_ENV=production
+    networks:
+      pong_network:
+        ipv4_address: 10.5.0.4
+    restart: always
+    depends_on:
+      - pong_backend
+
+  pong_backend:
+    container_name: pong-backend
+    build: pong_backend/
+    ports:
+      - '3021:3021'
+    networks:
+      pong_network:
+        ipv4_address: 10.5.0.3
+    restart: always
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - pong_database
+
+  pong_database:
+    image: postgres:latest
+    container_name: pong-database
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    networks:
+      pong_network:
+        ipv4_address: 10.5.0.2 
+    restart: always
+      
+
+networks:
+  pong_network:
+    driver: 'bridge'
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24
