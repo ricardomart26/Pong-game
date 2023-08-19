@@ -17,6 +17,8 @@ services:
     restart: always
     depends_on:
       - pong_backend
+    volumes:
+      - pong_frontend:/usr/src/app/
 
   pong_backend:
     container_name: pong-backend
@@ -31,12 +33,14 @@ services:
       - NODE_ENV=production
     depends_on:
       - pong_database
+    volumes:
+      - pong_backend:/usr/src/app/
 
   pong_database:
     image: postgres:latest
     container_name: pong-database
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_vol:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -54,3 +58,11 @@ networks:
     ipam:
       config:
         - subnet: 10.5.0.0/24
+
+volumes:
+  db_vol:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./postgres_data/
+      o: bind
