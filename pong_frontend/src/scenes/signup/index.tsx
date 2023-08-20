@@ -36,6 +36,7 @@ const SignupPage = () => {
                     <h2>Sign in</h2>
                     <TextField label="Username" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} required placeholder="Enter username..." fullWidth sx={{paddingBottom: 2}}></TextField>
                     <TextField label="Password" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} required placeholder="Enter password..." type="password" fullWidth sx={{paddingBottom: 2}}></TextField>
+                    <TextField label="Repeat Password" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} required placeholder="Enter password above..." type="password" fullWidth sx={{paddingBottom: 2}}></TextField>
                     <FormControlLabel
                         control={
                             <Checkbox name="checkBox" color="primary"/>
@@ -49,7 +50,7 @@ const SignupPage = () => {
                         </Link>
                     </Typography>
                     <Typography> Do you have an account?      
-                        <Link to="#" style={{paddingLeft: 2}}>
+                        <Link to="/login" style={{paddingLeft: 2}}>
                             Sign Up
                         </Link>
                     </Typography>
