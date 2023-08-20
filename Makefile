@@ -2,22 +2,23 @@
 NEST_CONTAINER=pong-backend
 REACT_CONTAINER=pong-frontend
 POSTGRES_CONTAINER=pong-database
+ADMINER_CONTAINER=pong-adminer
 POSTGRES_VOLUME=postgres_data
 USERNAME = $(shell id -nu)
 GROUPNAME = $(shell id -ng)
 
 all:
 	docker-compose up -d --build
-	chown $(USERNAME):$(GROUPNAME) -R $(POSTGRES_VOLUME)
+	sudo chown $(USERNAME):$(GROUPNAME) -R $(POSTGRES_VOLUME)
 
 down:
 	docker-compose down
 
 stop:
-	docker stop $(NEST_CONTAINER) $(REACT_CONTAINER) $(POSTGRES_CONTAINER) || true
+	docker stop $(NEST_CONTAINER) $(REACT_CONTAINER) $(POSTGRES_CONTAINER) $(ADMINER_CONTAINER) || true
 
 rm:
-	docker rm $(NEST_CONTAINER) $(REACT_CONTAINER) $(POSTGRES_CONTAINER) || true
+	docker rm $(NEST_CONTAINER) $(REACT_CONTAINER) $(POSTGRES_CONTAINER) $(ADMINER_CONTAINER) || true
 
 prune:
 	docker system prune -a
