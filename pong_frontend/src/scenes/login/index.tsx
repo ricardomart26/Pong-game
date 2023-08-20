@@ -7,7 +7,6 @@ import React, { useState } from "react";
 
 const LoginPage = () => {
 
-
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
 
@@ -37,18 +36,13 @@ const LoginPage = () => {
                     <h2>Log in</h2>
                     <TextField label="Username" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} required placeholder="Enter username..." fullWidth sx={{paddingBottom: 2}}></TextField>
                     <TextField label="Password" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} required placeholder="Enter password..." type="password" fullWidth></TextField>
-                    <FormControlLabel 
+                    <FormControlLabel
                         control={
                             <Checkbox name="checkBox" color="primary"/>
                         }
                         label="Remember Me"
                     />
                     <Button style={buttonStyle} type="submit" color="primary" fullWidth variant="contained"> Sign in </Button>
-                    <Typography>
-                        <Link to="#">
-                            Forgot password?
-                        </Link>
-                    </Typography>
                     <Typography> You don't have an account?      
                         <Link to="#" style={{paddingLeft: 2}}>
                             Sign Up
