@@ -1,4 +1,4 @@
-version: 3.3
+version: "3"
 
 services:
 
@@ -7,7 +7,7 @@ services:
     container_name: pong-frontend
     build: pong_frontend/
     ports:
-      - '3002:3002'
+      - '3002:3000'
     build: pong_frontend/
     environment:
       - NODE_ENV=production
@@ -18,7 +18,10 @@ services:
     depends_on:
       - pong_backend
     volumes:
-      - pong_frontend:/usr/src/app/
+      - ./pong_frontend:/usr/src/app/
+    env_file:
+      - .env
+
 
   pong_backend:
     container_name: pong-backend
@@ -27,14 +30,17 @@ services:
       - '3021:3021'
     networks:
       pong_network:
-        ipv4_address: 10.5.0.3
+        ipv4_address: 10.5.0.6
     restart: always
     environment:
       - NODE_ENV=production
     depends_on:
       - pong_database
     volumes:
-      - pong_backend:/usr/src/app/
+      - ./pong_backend:/usr/src/app/
+    env_file:
+      - .env
+
 
   pong_database:
     image: postgres:latest
@@ -50,6 +56,20 @@ services:
       pong_network:
         ipv4_address: 10.5.0.2 
     restart: always
+
+
+  adminer:
+    image: adminer
+    depends_on:
+      - pong_database 
+    networks:
+     - pong_network
+    container_name: pong-adminer
+    environment:
+      - ADMINER_DEFAULT_SERVER=database
+    ports:
+      - "8080:8080"
+
       
 
 networks:
