@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany, JoinTable} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 
 @Entity()
@@ -7,8 +7,8 @@ export class User
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
-    nick: string;
+    // @Column()
+    // nick: string;
 
     @Column()
     username: string;
@@ -28,10 +28,10 @@ export class User
     @Column({ type: "smallint", default: 0})
     status: number;
 
-    @Column({ type: 'timestamptz' }) 
-    creation_date: Date;
+    // @Column({ type: 'timestamptz', default: () => new Date()}) 
+    // creation_date: Date;
 
-    @Column({ type: 'timestamptz' }) 
-    last_joined_date: Date;
+    // @Column({ type: 'timestamptz', default: () => new Date() }) 
+    // last_joined_date: Date;
 }
 

@@ -5,8 +5,7 @@ import { UserService } from './user.service';
 import { User } from './user.entity';
 import { UpdateResult } from 'typeorm';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Express } from 'express';
-import { Response } from 'express';
+import { Response, Express } from 'express';
 
 @Controller('user')
 export class UserController {
@@ -38,15 +37,17 @@ export class UserController {
     return this.userService.findOneById(+id);
   }
   
-  @Get(':username')
+  @Get('username/:username')
   async findOneByUsername(@Param('username') username: string): Promise<User> {
-    return this.userService.findOneByUsername(username);
+    const user = await this.userService.findOneByUsername(username);
+    console.log(user);
+    return user;
   }
 
-  @Get('/userbynick/:nick')
-  async findOneByNick(@Param('nick') nick: string, @Res() response: Response): Promise<Response<User | string>> {
-    return this.userService.findOneByNick(nick, response);
-  }
+  // @Get('/userbynick/:nick')
+  // async findOneByNick(@Param('nick') nick: string, @Res() response: Response): Promise<Response<User | string>> {
+  //   return await this.userService.findOneByNick(nick, response);
+  // }
     
   @Patch('/update/:id')
   @UsePipes(ValidationPipe)

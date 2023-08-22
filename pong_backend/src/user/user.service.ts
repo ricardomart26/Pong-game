@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, UpdateResult } from 'typeorm';
-import { Response } from 'express';
-import { Multer } from 'multer';
+import { Response, response } from 'express';
 import { User } from './user.entity';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { CreateUserDto } from './dto/createUser.dto';
@@ -22,17 +21,17 @@ export class UserService {
   async createUser(userDto: CreateUserDto, response: Response, file: Express.Multer.File): Promise<Response<User>> {
     let earror=false;
 
-    const user = await this.userRepository.findOneBy({nick: userDto.username});
+    const user = await this.userRepository.findOneBy({username: userDto.username});
     if (user) {
       console.log("User already exist with this parameters:",user);
       return response.status(250).send({message:"Error - nick already exist", user: user});
     }
-
     userDto.avatar = file.filename;
     const createdUser = this.userRepository.create(userDto);   
-
+    console.log("createdUser", createdUser);
     const newUser = await this.userRepository.insert(createdUser).catch((Error) => {
       earror = true;
+      console.log("Error", Error);
       // return response.status(260).send({message: `Please check parameters: ${Error}`, user: newUser});
     });
     if(!earror)
@@ -46,15 +45,24 @@ export class UserService {
   }
 
   async findOneByUsername(username: string): Promise<User> {
-    return await this.userRepository.findOneBy({nick: username});
+    const user = await this.userRepository.findOneBy({username: username});
+    console.log(user);
+    console.log(await this.userRepository.find());
+    if (!user)
+    {
+      console.log(``);
+      throw new NotFoundException(`User ${username} not found`);
+    }
+    return user
+    // return (user ? response.status(HttpStatus.FOUND).json(user).send() : response.status(HttpStatus.NOT_FOUND).send());
   }
 
-  async findOneByNick(nick: string, response: Response): Promise<Response<string | User>> {
-    const user = await this.userRepository.findOneBy({nick: nick})
-    if (!user)
-      return response.status(250).send("User not found");
-    return response.status(200).send(user);
-  }
+  // async findOneByNick(nick: string, response: Response): Promise<Response<string | User>> {
+  //   const user = await this.userRepository.findOneBy({nick: nick})
+  //   if (!user)
+  //     return response.status(250).send("User not found");
+  //   return response.status(200).send(user);
+  // }
 
   async findOneById(userId: number): Promise<User> {
     return await this.userRepository.findOne({where: {id: userId}});

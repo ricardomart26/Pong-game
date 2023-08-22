@@ -1,16 +1,18 @@
 
-import { Button, Avatar, Box, FormControlLabel, Grid, Paper, TextField, Checkbox, Typography, CssBaseline } from "@mui/material"
+import { Button, Avatar, Box, FormControlLabel, Grid, Paper, TextField, Checkbox, Typography, CssBaseline, Alert, AlertTitle } from "@mui/material"
 
 import { LockOutlined } from "@mui/icons-material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
+import axios from "axios";
 
 const LoginPage = () => {
 
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
-
-
+    const [error, setError] = useState<boolean>(false);
+    const navigate = useNavigate();
+    
     const paperStyle = {
         padding: 20,
         height: '45vh',
@@ -25,6 +27,21 @@ const LoginPage = () => {
         marginBottom: 8,
     };
 
+    const handleLogin = async (e: React.MouseEvent) => {
+        setError(false);
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user/username/${username}`);
+        if (response.status !== 404) {
+            const data = response.data;
+            if (data.password === password)
+                navigate('../menu');
+        }
+        setError(true);
+    }
+
+
+    const handleUsernameInput = (e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value);
+    const handlePasswordInput = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
+
     return (
         <div>
             {/* <CssBaseline/> */}
@@ -34,15 +51,26 @@ const LoginPage = () => {
                         <Avatar style={avatarStyle}><LockOutlined/></Avatar>
                     </Box>
                     <h2>Log in</h2>
-                    <TextField label="Username" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} required placeholder="Enter username..." fullWidth sx={{paddingBottom: 2}}></TextField>
-                    <TextField label="Password" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} required placeholder="Enter password..." type="password" fullWidth></TextField>
+                    <TextField 
+                        label="Username"
+                        onChange={handleUsernameInput}
+                        required
+                        placeholder="Enter username..."
+                        fullWidth/>
+                    <TextField 
+                        label="Password"
+                        onChange={handlePasswordInput}
+                        required
+                        placeholder="Enter password..."
+                        type="password"
+                        fullWidth/>
                     <FormControlLabel
                         control={
                             <Checkbox name="checkBox" color="primary"/>
                         }
                         label="Remember Me"
                     />
-                    <Button style={buttonStyle} type="submit" color="primary" fullWidth variant="contained"> Sign in </Button>
+                    <Button style={buttonStyle} type="submit" color="primary" onClick={handleLogin} fullWidth variant="contained"> Log in </Button>
                     <Typography> You don't have an account?      
                         <Link to="#" style={{paddingLeft: 2}}>
                             Sign Up
@@ -50,6 +78,14 @@ const LoginPage = () => {
                     </Typography>
                 </Paper>
             </Box>
+            {!error && 
+                <Alert>
+                    <AlertTitle>
+                        Login error
+                    </AlertTitle>
+                        Username or password incorrect
+                </Alert>
+            }
         </div>
     );
 
