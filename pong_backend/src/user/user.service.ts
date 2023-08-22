@@ -20,19 +20,16 @@ export class UserService {
   
   async createUser(userDto: CreateUserDto, response: Response, file: Express.Multer.File): Promise<Response<User>> {
     let earror=false;
-
+    console.log("Creating user...");
     const user = await this.userRepository.findOneBy({username: userDto.username});
-    if (user) {
-      console.log("User already exist with this parameters:",user);
+    if (user)
       return response.status(250).send({message:"Error - nick already exist", user: user});
-    }
+
     userDto.avatar = file.filename;
     const createdUser = this.userRepository.create(userDto);   
     console.log("createdUser", createdUser);
-    const newUser = await this.userRepository.insert(createdUser).catch((Error) => {
+    await this.userRepository.insert(createdUser).catch((Error) => {
       earror = true;
-      console.log("Error", Error);
-      // return response.status(260).send({message: `Please check parameters: ${Error}`, user: newUser});
     });
     if(!earror)
       return response.status(200).send({message: "User Created Successfuly", user: createdUser});

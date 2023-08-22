@@ -4,7 +4,7 @@ import { Button, Avatar, Box, FormControlLabel, Grid, Paper, TextField, Checkbox
 import { LockOutlined } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
-import axios from "axios";
+import axios from "../../api/axios";
 
 const LoginPage = () => {
 
@@ -29,15 +29,17 @@ const LoginPage = () => {
 
     const handleLogin = async (e: React.MouseEvent) => {
         setError(false);
-        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user/username/${username}`);
-        if (response.status !== 404) {
+        try {
+            const response = await axios.get(`/user/username/${username}`);
             const data = response.data;
-            if (data.password === password)
+            if (data.password !== password)
+                throw new Error('Invalid password');
                 navigate('../menu');
+        } catch (err) {
+            console.log("(Login page) axios get error: ", err);
+            setError(true);
         }
-        setError(true);
     }
-
 
     const handleUsernameInput = (e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value);
     const handlePasswordInput = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
@@ -68,24 +70,32 @@ const LoginPage = () => {
                         control={
                             <Checkbox name="checkBox" color="primary"/>
                         }
-                        label="Remember Me"
-                    />
-                    <Button style={buttonStyle} type="submit" color="primary" onClick={handleLogin} fullWidth variant="contained"> Log in </Button>
+                        label="Remember Me"/>
+                    <Button
+                        disabled={!username || !password}
+                        style={buttonStyle}
+                        type="submit"
+                        color="primary"
+                        onClick={handleLogin}
+                        fullWidth
+                        variant="contained">
+                            Log in 
+                    </Button>
                     <Typography> You don't have an account?      
-                        <Link to="#" style={{paddingLeft: 2}}>
+                        <Link to="/" style={{paddingLeft: 2}}>
                             Sign Up
                         </Link>
                     </Typography>
+                    {error && 
+                        <Alert severity="error">
+                            <AlertTitle>
+                                Login error
+                            </AlertTitle>
+                                Username or password incorrect
+                        </Alert>
+                    }
                 </Paper>
             </Box>
-            {!error && 
-                <Alert>
-                    <AlertTitle>
-                        Login error
-                    </AlertTitle>
-                        Username or password incorrect
-                </Alert>
-            }
         </div>
     );
 
