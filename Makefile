@@ -9,7 +9,7 @@ GROUPNAME = $(shell id -ng)
 
 all:
 	docker-compose up -d --build
-	sudo chown $(USERNAME):$(GROUPNAME) -R $(POSTGRES_VOLUME)
+	# sudo chown $(USERNAME):$(GROUPNAME) -R $(POSTGRES_VOLUME)
 
 down:
 	docker-compose down
@@ -30,6 +30,8 @@ logs_react:
 	docker logs -f $(REACT_CONTAINER)
 
 re: down all
+
+
 
 fclean: stop rm prune
 	

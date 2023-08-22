@@ -50,6 +50,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=pong_game
     ports:
       - '5432:5432'
     networks:
